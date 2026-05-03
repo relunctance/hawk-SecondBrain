@@ -21,6 +21,7 @@ import {
   CreateTILEntry,
   CreateTILResponse,
   TILListResponse,
+  CompileResponse,
 } from './types';
 import { loadConfig } from './config';
 
@@ -56,6 +57,21 @@ export class HawkMemoryClient {
   async recall(req: Omit<RecallRequest, 'agent_id'>): Promise<RecallResponse> {
     const payload = { ...req, agent_id: this.agentId };
     return this.requestWithRetry<RecallResponse>('/v1/recall', 'post', payload);
+  }
+
+  /** Compile memories for a task via POST /v1/compile (KR-3.10 Task-Aware) */
+  async compile(params: {
+    taskId: string;
+    query: string;
+    plan?: { steps: string[] };
+  }): Promise<CompileResponse> {
+    const payload = {
+      agent_id: this.agentId,
+      task_id: params.taskId,
+      query: params.query,
+      ...(params.plan ? { plan: params.plan } : {}),
+    };
+    return this.requestWithRetry<CompileResponse>('/v1/compile', 'post', payload);
   }
 
   /** Get daily stats via GET /v1/stats/daily */

@@ -82,6 +82,14 @@ export interface WeeklyStats {
   daily_count: number;
 }
 
+// ─── Task-Aware Recall Types (KR-3.10) ─────────────────────────────
+
+export interface CompileResponse {
+  task_summary: string;
+  next_steps: string[];
+  confidence: number;
+}
+
 // ─── TIL Types (KR-3.7) ───────────────────────────────────────────
 
 export type TILPeriod = 'daily' | 'weekly';
