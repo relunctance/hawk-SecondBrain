@@ -17,6 +17,10 @@ import {
   RecallResponse,
   DailyStats,
   ReportMeta,
+  TILEntry,
+  CreateTILEntry,
+  CreateTILResponse,
+  TILListResponse,
 } from './types';
 import { loadConfig } from './config';
 
@@ -68,9 +72,38 @@ export class HawkMemoryClient {
     });
   }
 
+  /** Create a TIL entry via POST /v1/til */
+  async createTIL(entry: CreateTILEntry): Promise<CreateTILResponse> {
+    return this.requestWithRetry<CreateTILResponse>('/v1/til', 'post', entry);
+  }
+
+  /** Get a TIL entry by ID via GET /v1/til/:id */
+  async getTIL(id: string): Promise<TILEntry> {
+    return this.requestWithRetry<TILEntry>(`/v1/til/${id}`, 'get', null);
+  }
+
+  /** List TIL entries by agent via GET /v1/til/agent/:agent_id */
+  async listTILByAgent(limit: number = 20): Promise<TILListResponse> {
+    return this.requestWithRetry<TILListResponse>('/v1/til/agent/' + this.agentId, 'get', null, {
+      params: { limit },
+    });
+  }
+
+  /** List TIL entries by agent and date via GET /v1/til/date/:agent_id/:date */
+  async listTILByDate(date: string, limit: number = 20): Promise<TILListResponse> {
+    return this.requestWithRetry<TILListResponse>(`/v1/til/date/${this.agentId}/${date}`, 'get', null, {
+      params: { limit },
+    });
+  }
+
+  /** Delete a TIL entry via DELETE /v1/til/:id */
+  async deleteTIL(id: string): Promise<void> {
+    return this.requestWithRetry<void>(`/v1/til/${id}`, 'delete', null);
+  }
+
   private async requestWithRetry<T>(
     url: string,
-    method: 'get' | 'post',
+    method: 'get' | 'post' | 'delete',
     data: unknown,
     config: Record<string, unknown> = {},
     retryConfig: RetryConfig = DEFAULT_RETRY,

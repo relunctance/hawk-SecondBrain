@@ -81,3 +81,49 @@ export interface WeeklyStats {
   total_recalls: number;
   daily_count: number;
 }
+
+// ─── TIL Types (KR-3.7) ───────────────────────────────────────────
+
+export type TILPeriod = 'daily' | 'weekly';
+export type TILRefreshType = 'correction' | 'expansion' | 'paradigm_shift';
+
+export interface TILEntry {
+  id: string;
+  agent_id: string;
+  date: string;
+  period: TILPeriod;
+  before_statement: string;
+  after_statement: string;
+  refresh_type: TILRefreshType;
+  source_memory_ids: string[];
+  source_summary: string;
+  shareability: number;
+  impact_score: number;
+  topic: string;
+  tags?: string[];
+  created_at: string;
+}
+
+export interface CreateTILEntry {
+  agent_id: string;
+  date: string;
+  period?: TILPeriod;
+  before_statement: string;
+  after_statement: string;
+  refresh_type?: TILRefreshType;
+  source_memory_ids?: string[];
+  source_summary?: string;
+  shareability?: number;
+  impact_score?: number;
+  topic: string;
+  tags?: string[];
+}
+
+export interface CreateTILResponse {
+  id: string;
+}
+
+export interface TILListResponse {
+  til_entries: TILEntry[];
+  count: number;
+}
