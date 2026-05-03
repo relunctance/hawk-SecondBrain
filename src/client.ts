@@ -101,6 +101,55 @@ export class HawkMemoryClient {
     return this.requestWithRetry<void>(`/v1/til/${id}`, 'delete', null);
   }
 
+  // ─── Branching API ───────────────────────────────────────────────────
+
+  /** Create a branch via POST /v1/branches */
+  async createBranch(params: {
+    agentId: string;
+    branchName: string;
+    branchType: string;
+    description?: string;
+    sourceDecision?: string;
+  }): Promise<any> {
+    const body = {
+      agent_id: params.agentId,
+      branch_name: params.branchName,
+      branch_type: params.branchType,
+      description: params.description,
+      source_decision: params.sourceDecision,
+    };
+    const resp = await this.requestWithRetry<{ branch: any }>('/v1/branches', 'post', body);
+    return resp.branch;
+  }
+
+  /** List branches for an agent via GET /v1/branches/:agent_id */
+  async listBranches(agentId: string): Promise<any[]> {
+    const resp = await this.requestWithRetry<{ branches: any[] }>(`/v1/branches/${agentId}`, 'get', null);
+    return resp.branches || [];
+  }
+
+  /** Get a branch with memories via GET /v1/branches/:agent_id/:branch_id */
+  async getBranch(branchId: string): Promise<any> {
+    // Note: the path uses agent_id prefix but branch_id is what we need
+    const resp = await this.requestWithRetry<{ branch: any }>(`/v1/branches/__agent__/${branchId}`, 'get', null);
+    return resp.branch;
+  }
+
+  /** Delete a branch via DELETE /v1/branches/:agent_id/:branch_id */
+  async deleteBranch(branchId: string): Promise<{ branch_id: string; status: string }> {
+    return this.requestWithRetry<{ branch_id: string; status: string }>(
+      `/v1/branches/__agent__/${branchId}`, 'delete', null
+    );
+  }
+
+  /** Merge a branch via POST /v1/branches/:agent_id/:branch_id/merge */
+  async mergeBranch(branchId: string, mergedInto: string): Promise<{ branch_id: string; merged_into: string; status: string }> {
+    const body = { merged_into: mergedInto };
+    return this.requestWithRetry<{ branch_id: string; merged_into: string; status: string }>(
+      `/v1/branches/__agent__/${branchId}/merge`, 'post', body
+    );
+  }
+
   private async requestWithRetry<T>(
     url: string,
     method: 'get' | 'post' | 'delete',
