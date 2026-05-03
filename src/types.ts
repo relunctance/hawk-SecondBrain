@@ -135,3 +135,49 @@ export interface TILListResponse {
   til_entries: TILEntry[];
   count: number;
 }
+
+// ─── Memory Coach Types (KR-3.13) ─────────────────────────────────
+
+export interface CoachIssue {
+  type: 'decay' | 'duplicate' | 'fragmentation' | 'staleness' | 'coverage_gap';
+  memory_id: string;
+  severity: 'low' | 'medium' | 'high';
+  description: string;
+  detected_at: string;
+}
+
+export interface CoachHygieneReport {
+  agent_id: string;
+  generated_at: string;
+  hygiene_score: number;
+  total_issues: number;
+  summary: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  issues: CoachIssue[];
+}
+
+export interface CoachStats {
+  agent_id: string;
+  generated_at: string;
+  hygiene_score: number;
+  issue_counts: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  total_issues: number;
+}
+
+export interface CoachCheckResponse {
+  issues_found: number;
+  issues: CoachIssue[];
+  checked_at: string;
+}
+
+export interface CoachCheckRequest {
+  agent_id: string;
+  detectors?: string[];
+}

@@ -22,6 +22,10 @@ import {
   CreateTILResponse,
   TILListResponse,
   CompileResponse,
+  CoachHygieneReport,
+  CoachStats,
+  CoachCheckResponse,
+  CoachCheckRequest,
 } from './types';
 import { loadConfig } from './config';
 
@@ -164,6 +168,31 @@ export class HawkMemoryClient {
     return this.requestWithRetry<{ branch_id: string; merged_into: string; status: string }>(
       `/v1/branches/__agent__/${branchId}/merge`, 'post', body
     );
+  }
+
+  // ─── Memory Coach API (KR-3.13) ──────────────────────────────────
+
+  /** Get hygiene report via GET /v1/coach/report */
+  async getCoachReport(): Promise<CoachHygieneReport> {
+    return this.requestWithRetry<CoachHygieneReport>('/v1/coach/report', 'get', null, {
+      params: { agent_id: this.agentId },
+    });
+  }
+
+  /** Get coach stats via GET /v1/coach/stats */
+  async getCoachStats(): Promise<CoachStats> {
+    return this.requestWithRetry<CoachStats>('/v1/coach/stats', 'get', null, {
+      params: { agent_id: this.agentId },
+    });
+  }
+
+  /** Trigger coach detection via POST /v1/coach/detect */
+  async runCoachCheck(req?: Omit<CoachCheckRequest, 'agent_id'>): Promise<CoachCheckResponse> {
+    const payload: CoachCheckRequest = {
+      agent_id: this.agentId,
+      ...(req?.detectors ? { detectors: req.detectors } : {}),
+    };
+    return this.requestWithRetry<CoachCheckResponse>('/v1/coach/detect', 'post', payload);
   }
 
   private async requestWithRetry<T>(
