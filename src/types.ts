@@ -70,3 +70,14 @@ export interface ReportMeta {
   date: string;
   type: 'daily' | 'weekly';
 }
+
+/** Weekly aggregated stats */
+export interface WeeklyStats {
+  agent_id: string;
+  week_start: string;
+  week_end: string;
+  total_memories: number;
+  total_captures: number;
+  total_recalls: number;
+  daily_count: number;
+}
