@@ -1,0 +1,80 @@
+# hawk-memory.yaml — hawk-SecondBrain v0.1 Docker deployment config
+# This file is mounted read-only into the hawk-memory container
+
+server:
+  host: "0.0.0.0"
+  port: 18368
+  read_timeout: 30s
+  write_timeout: 30s
+  startup_timeout: 5s
+
+storage:
+  lancedb:
+    path: "/data/hawk-memory/lancedb"
+    fts:
+      enabled: true
+      rebuild_interval: 60s
+  memory:
+    max_entries: 100000
+    cache_size: 1024MB
+
+xai:
+  xinference_url: "http://xinference:9997"
+  embedding_model: "bge-m3"
+  embedding_dim: 1024
+  llm_model: "qwen2.5-7b-instruct"
+  embedding_batch_size: 32
+
+mflow:
+  url: "http://mflow:8000"
+  dual_write: true
+  mflow_weight: 0.3
+
+redis:
+  url: "redis://redis:6379"
+  cache_ttl: 3600s
+
+agent:
+  id: "${HAWK_AGENT_ID:-default}"
+  api_key: "${HAWK_API_KEY:-}"
+
+logging:
+  level: "${HAWK_LOG_LEVEL:-info}"
+  format: "json"
+
+timeouts:
+  recall: 8s
+  capture_batch_async: 3s
+  capture_single: 3s
+  rewrite: 3s
+  mflow_recall: 15s
+  til_generation: 10s
+  mapping: 5s
+  delete_mapping: 5s
+  fts_query: 3s
+  prediction_recall: 5s
+  consensus_recall: 10s
+  coach: 30s
+  coach_step: 10s
+  embedding: 30s
+  llm: 60s
+  lancedb_http: 30s
+  index_create: 15s
+  fts_rebuild_scan: 5s
+
+retry:
+  webhook_backoff:
+    - 1s
+    - 2s
+    - 4s
+  max_retries: 3
+
+thresholds:
+  rune_count_medium: 180
+  til_rune_low: 50
+  til_rune_medium: 300
+  til_rune_high: 500
+
+decay:
+  fact_half_life_days: 180
+  confidence_half_life_days: 180.0

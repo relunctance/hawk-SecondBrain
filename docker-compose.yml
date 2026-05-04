@@ -1,0 +1,160 @@
+# docker-compose.yml — hawk-SecondBrain v0.1
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f
+#
+version: "3.9"
+
+networks:
+  hawk-net:
+    driver: bridge
+
+volumes:
+  hawk-data:
+  xinference-models:
+  mflow-data:
+  redis-data:
+
+services:
+  # ============================================================
+  # hawk-memory — Core Memory Engine
+  # ============================================================
+  hawk-memory:
+    image: ghcr.io/relunctance/hawk-memory:${HAWK_MEMORY_VERSION:-v0.1.0}
+    container_name: hawk-memory
+    restart: unless-stopped
+    ports:
+      - "18368:18368"
+    environment:
+      - HAWK_PORT=18368
+      - HAWK_LANCEDB_PATH=/data/hawk-memory
+      - HAWK_XINFERENCE_URL=http://xinference:9997
+      - HAWK_MFLOW_URL=http://mflow:8000
+      - HAWK_REDIS_URL=redis://redis:6379
+      - HAWK_LOG_LEVEL=${HAWK_LOG_LEVEL:-info}
+      - HAWK_AGENT_ID=${HAWK_AGENT_ID:-default}
+      - HAWK_API_KEY=${HAWK_API_KEY:-}
+    volumes:
+      - hawk-data:/data/hawk-memory
+      - ./config/hawk-memory.yaml:/etc/hawk-memory/config.yaml:ro
+    networks:
+      - hawk-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18368/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      redis:
+        condition: service_healthy
+      xinference:
+        condition: service_healthy
+
+  # ============================================================
+  # xinference — Local Embedding + LLM Inference
+  # ============================================================
+  xinference:
+    image: xprobe/xinference:${XINFERENCE_VERSION:-v0.16.0}
+    container_name: xinference
+    restart: unless-stopped
+    ports:
+      - "9997:9997"   # REST API
+      - "8080:8080"   # UI (optional)
+    environment:
+      - XINFERENCE_MODEL_DEESeekR1_VOLUME=/models
+      - XINFERENCE_WORKER_DEVICES=${XINFERENCE_WORKER_DEVICES:-cuda}
+    volumes:
+      - xinference-models:/models
+    networks:
+      - hawk-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9997/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # ============================================================
+  # hawk-SecondBrain — OpenClaw Hooks Bridge
+  # ============================================================
+  hawk-secondbrain:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/relunctance/hawk-secondbrain:${VERSION:-v0.1.0}
+    container_name: hawk-secondbrain
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - HAWK_MEMORY_URL=http://hawk-memory:18368
+      - HAWK_MEMORY_API_KEY=${HAWK_API_KEY:-}
+      - HAWK_AGENT_ID=${HAWK_AGENT_ID:-default}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - hawk-data:/app/.hawk:ro
+    networks:
+      - hawk-net
+    depends_on:
+      hawk-memory:
+        condition: service_healthy
+
+  # ============================================================
+  # mflow — Procedural Memory Engine
+  # ============================================================
+  mflow:
+    image: ghcr.io/relunctance/mflow:${MFLOW_VERSION:-v0.3.0}
+    container_name: mflow
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MFLOW_DB_PATH=/data/mflow.db
+      - MFLOW_LANCEDB_PATH=/data/mflow-lance
+      - MFLOW_XINFERENCE_URL=http://xinference:9997
+      - MFLOW_LOG_LEVEL=info
+    volumes:
+      - mflow-data:/data
+      - xinference-models:/models:ro
+    networks:
+      - hawk-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ============================================================
+  # redis — Cache + Short-term Data
+  # ============================================================
+  redis:
+    image: redis:${REDIS_VERSION:-7-alpine}
+    container_name: hawk-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - hawk-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  hawk-net:
+    name: hawk-net
