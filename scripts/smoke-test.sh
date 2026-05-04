@@ -94,14 +94,14 @@ fi
 # ============================================================
 # 4. Stats API (important)
 # ============================================================
-run_test "stats daily" "curl -sf 'http://localhost:18368/v1/stats/daily?agent_id=smoke-test'"
+run_test "stats daily" "curl -sf 'http://localhost:18368/v1/analytics/roi?agent_id=smoke-test'"
 
 # ============================================================
 # 5. Belief API (important)
 # ============================================================
 run_test "belief record" "curl -sf -X POST http://localhost:18368/v1/belief \
     -H 'Content-Type: application/json' \
-    -d '{\"agent_id\":\"smoke-test\",\"text\":\"testing belief timeline\"}'"
+    -d '{\"agent_id\":\"smoke-test\",\"topic\":\"test-topic\",\"belief\":\"testing belief timeline\"}'"
 
 # ============================================================
 # 6. Coach/Hygiene API (important)
