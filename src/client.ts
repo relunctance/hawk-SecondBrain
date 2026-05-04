@@ -26,6 +26,11 @@ import {
   CoachStats,
   CoachCheckResponse,
   CoachCheckRequest,
+  CounterfactualBranch,
+  CounterfactualExtractResponse,
+  CounterfactualListResponse,
+  CausalChainResult,
+  CausalDetectResult,
 } from './types';
 import { loadConfig } from './config';
 
@@ -193,6 +198,60 @@ export class HawkMemoryClient {
       ...(req?.detectors ? { detectors: req.detectors } : {}),
     };
     return this.requestWithRetry<CoachCheckResponse>('/v1/coach/detect', 'post', payload);
+  }
+
+  // ─── Counterfactual Memory API (KR-3.14) ─────────────────────────
+
+  /** Extract counterfactual branch from a memory via POST /v1/counterfactual/extract */
+  async extractCounterfactual(memoryId: string): Promise<CounterfactualBranch> {
+    const body = {
+      agent_id: this.agentId,
+      memory_id: memoryId,
+    };
+    const resp = await this.requestWithRetry<CounterfactualExtractResponse>(
+      '/v1/counterfactual/extract', 'post', body
+    );
+    return resp.branch;
+  }
+
+  /** Get counterfactual branches for a memory via GET /v1/counterfactual/branches/:memory_id */
+  async getCounterfactualBranches(memoryId: string): Promise<CounterfactualBranch[]> {
+    const resp = await this.requestWithRetry<CounterfactualListResponse>(
+      `/v1/counterfactual/branches/${memoryId}`, 'get', null
+    );
+    return resp.branches || [];
+  }
+
+  /** List all counterfactual branches for an agent via GET /v1/counterfactual/list */
+  async listCounterfactualBranches(topK: number = 20): Promise<CounterfactualBranch[]> {
+    const resp = await this.requestWithRetry<CounterfactualListResponse>(
+      '/v1/counterfactual/list', 'get', null, {
+        params: { agent_id: this.agentId, top_k: topK },
+      }
+    );
+    return resp.branches || [];
+  }
+
+  // ─── Causal Detection API (KR-3.14) ──────────────────────────────
+
+  /** Detect if a cause-effect relationship is causal via POST /v1/causal/detect */
+  async detectCausal(cause: string, effect: string): Promise<CausalDetectResult> {
+    const body = {
+      agent_id: this.agentId,
+      cause,
+      effect,
+    };
+    return this.requestWithRetry<CausalDetectResult>('/v1/causal/detect', 'post', body);
+  }
+
+  /** Extract causal chain from a memory via POST /v1/causal/extract */
+  async extractCausalChain(memoryId: string, topic?: string): Promise<CausalChainResult> {
+    const body: { agent_id: string; memory_id: string; topic?: string } = {
+      agent_id: this.agentId,
+      memory_id: memoryId,
+    };
+    if (topic) body.topic = topic;
+    return this.requestWithRetry<CausalChainResult>('/v1/causal/extract', 'post', body);
   }
 
   private async requestWithRetry<T>(

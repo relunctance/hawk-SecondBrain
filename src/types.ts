@@ -181,3 +181,38 @@ export interface CoachCheckRequest {
   agent_id: string;
   detectors?: string[];
 }
+
+// ─── Causal Memory Types (KR-3.14) ─────────────────────────────────
+
+export interface CounterfactualBranch {
+  id: string;
+  source_memory_id: string;
+  branch_id: string;
+  alternative_choice: string;
+  hypothesis: string;
+  confidence: number;
+  key_differences: string[];
+  created_at: number;
+  updated_at: number;
+}
+
+export interface CounterfactualExtractResponse {
+  branch: CounterfactualBranch;
+}
+
+export interface CounterfactualListResponse {
+  branches: CounterfactualBranch[];
+}
+
+export interface CausalChainResult {
+  memory_id: string;
+  branches: CounterfactualBranch[];
+  summary: string;
+  extracted_at: string;
+}
+
+export interface CausalDetectResult {
+  is_causal: boolean;
+  confidence: number;
+  reasoning: string;
+}
