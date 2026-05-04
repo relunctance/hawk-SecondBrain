@@ -216,3 +216,94 @@ export interface CausalDetectResult {
   confidence: number;
   reasoning: string;
 }
+
+// ─── Active Memory Types (KR-3.15) ─────────────────────────────────
+
+export const TriggerTypes = {
+  MilestoneDueSoon: 'milestone_due_soon',
+  MilestoneOverdue: 'milestone_overdue',
+  GoalDueSoon: 'goal_due_soon',
+  GoalOverdue: 'goal_overdue',
+  StalledGoal: 'stalled_goal',
+  RecurringDue: 'recurring_due',
+  GoalProgressUpdate: 'goal_progress_update',
+  BlockerAppeared: 'blocker_appeared',
+  BlockerResolved: 'blocker_resolved',
+  OnTrackChange: 'on_track_change',
+  MilestoneCompleted: 'milestone_completed',
+  WorkingMemoryTopic: 'working_memory_topic',
+  ExternalEvent: 'external_event',
+  CollaborationMention: 'collaboration_mention',
+  PredictedNeed: 'predicted_need',
+  TaskContext: 'task_context',
+  Contradiction: 'contradiction',
+  DecisionReversal: 'decision_reversal',
+  InactiveFollow: 'inactive_follow',
+} as const;
+
+export type TriggerType = typeof TriggerTypes[keyof typeof TriggerTypes];
+
+export const StatusTypes = {
+  PendingGeneration: 'pending_generation',
+  Queued: 'queued',
+  Delivered: 'delivered',
+  Seen: 'seen',
+  Dismissed: 'dismissed',
+  Expired: 'expired',
+  Skipped: 'skipped',
+} as const;
+
+export type StatusType = typeof StatusTypes[keyof typeof StatusTypes];
+
+export interface ActiveMemoryEntry {
+  id: string;
+  agent_id: string;
+  trigger_type: TriggerType;
+  trigger_signal: string;
+  push_title: string;
+  push_body: string;
+  push_summary: string;
+  priority: number;
+  status: StatusType;
+  created_at: string;
+  delivered_at?: string | null;
+  seen_at?: string | null;
+  dismissed_at?: string | null;
+  feedback?: string | null;
+  read_at?: string | null;
+}
+
+export interface ListActiveEntriesResponse {
+  entries: ActiveMemoryEntry[];
+  total: number;
+}
+
+export interface TriggerActiveResponse {
+  entry_id: string;
+  status: StatusType;
+  push_title: string;
+}
+
+export interface ActivePreferences {
+  id: string;
+  agent_id: string;
+  enabled: boolean;
+  quiet_hours_start?: string;
+  quiet_hours_end?: string;
+  max_daily_pushes?: number;
+  webhook_url?: string;
+}
+
+export interface PushMetrics {
+  agent_id: string;
+  date: string;
+  pushed: number;
+  delivered: number;
+  seen: number;
+  dismissed: number;
+  useful: number;
+  not_useful: number;
+  irrelevant: number;
+  open_rate?: number;
+  useful_rate?: number;
+}

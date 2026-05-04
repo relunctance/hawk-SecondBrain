@@ -31,6 +31,11 @@ import {
   CounterfactualListResponse,
   CausalChainResult,
   CausalDetectResult,
+  ActiveMemoryEntry,
+  ListActiveEntriesResponse,
+  TriggerActiveResponse,
+  ActivePreferences,
+  PushMetrics,
 } from './types';
 import { loadConfig } from './config';
 
@@ -125,6 +130,65 @@ export class HawkMemoryClient {
   async deleteTIL(id: string): Promise<void> {
     return this.requestWithRetry<void>(`/v1/til/${id}`, 'delete', null);
   }
+
+  // ─── Active Memory API (KR-3.15) ──────────────────────────────────────
+
+
+  /** List active memory entries via GET /v1/active/entries */
+  async listActiveEntries(agentId?: string, limit: number = 50): Promise<ListActiveEntriesResponse> {
+    const aid = agentId || this.agentId;
+    return this.requestWithRetry<ListActiveEntriesResponse>(
+      `/v1/active/entries?agent_id=${aid}&limit=${limit}`, 'get', null
+    );
+  }
+
+  /** Get a single active memory entry via GET /v1/active/entries/:id */
+  async getActiveEntry(id: string): Promise<ActiveMemoryEntry> {
+    return this.requestWithRetry<ActiveMemoryEntry>(`/v1/active/entries/${id}`, 'get', null);
+  }
+
+  /** Mark active entry as read via POST /v1/active/entries/:id/read */
+  async markActiveEntryRead(id: string): Promise<void> {
+    return this.requestWithRetry<void>(`/v1/active/entries/${id}/read`, 'post', null);
+  }
+
+  /** Dismiss active entry via POST /v1/active/entries/:id/dismiss */
+  async dismissActiveEntry(id: string): Promise<void> {
+    return this.requestWithRetry<void>(`/v1/active/entries/${id}/dismiss`, 'post', null);
+  }
+
+  /** Submit feedback for active entry via POST /v1/active/entries/:id/feedback */
+  async submitActiveFeedback(id: string, feedback: string): Promise<void> {
+    return this.requestWithRetry<void>(`/v1/active/entries/${id}/feedback`, 'post', { feedback });
+  }
+
+  /** Trigger active memory manually via POST /v1/active/trigger */
+  async triggerActiveMemory(agentId: string, triggerType: string, triggerSignal: string): Promise<TriggerActiveResponse> {
+    return this.requestWithRetry<TriggerActiveResponse>('/v1/active/trigger', 'post', {
+      agent_id: agentId,
+      trigger_type: triggerType,
+      trigger_signal: triggerSignal,
+    });
+  }
+
+  /** Get active memory preferences via GET /v1/active/preferences */
+  async getActivePreferences(agentId?: string): Promise<ActivePreferences> {
+    const aid = agentId || this.agentId;
+    return this.requestWithRetry<ActivePreferences>(`/v1/active/preferences?agent_id=${aid}`, 'get', null);
+  }
+
+  /** Update active memory preferences via PUT /v1/active/preferences */
+  async updateActivePreferences(prefs: ActivePreferences): Promise<void> {
+    return this.requestWithRetry<void>(`/v1/active/preferences?agent_id=${prefs.agent_id}`, 'post', prefs);
+  }
+
+  /** Get active memory metrics via GET /v1/active/metrics */
+  async getActiveMetrics(agentId?: string, date?: string): Promise<PushMetrics> {
+    const aid = agentId || this.agentId;
+    const d = date || new Date().toISOString().split('T')[0];
+    return this.requestWithRetry<PushMetrics>(`/v1/active/metrics?agent_id=${aid}&date=${d}`, 'get', null);
+  }
+
 
   // ─── Branching API ───────────────────────────────────────────────────
 
