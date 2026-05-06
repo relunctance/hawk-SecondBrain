@@ -8,6 +8,8 @@
 
 **hawk-SecondBrain** 是 OpenClaw Agent Hooks 与 hawk-memory HTTP API 之间的桥接层。它将本地 Hook 处理器转换为 API 调用，支持多 Agent 和多会话场景下的分布式记忆共享。
 
+> 📖 This document is also available in [English](README.md).
+
 ---
 
 ## 目录
@@ -495,6 +497,7 @@ Apache License 2.0 — 详见 [LICENSE](LICENSE)。
 
 ## 链接
 
+- [English Documentation](README.md) — English version
 - [hawk-memory](https://github.com/relunctance/hawk-memory) — 核心记忆引擎
 - [hawk-eval](https://github.com/relunctance/hawk-eval) — 基准测试系统
 - [hawk-sla](https://github.com/relunctance/hawk-sla) — 项目跟踪
